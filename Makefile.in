@@ -55,6 +55,8 @@ userlevel: Makefile click-buildtool click-compile stamp-h
 	@cd userlevel && $(MAKE) all
 tools: Makefile stamp-h
 	@cd tools && $(MAKE) all
+octeon: Makefile stamp-h
+	@cd octeon && $(MAKE) all
 
 install-bsdmodule: Makefile click-buildtool stamp-h installch
 	@cd bsdmodule && $(MAKE) install
@@ -77,6 +79,8 @@ clean-userlevel:
 	@cd userlevel && $(MAKE) clean
 clean-tools:
 	@cd tools && $(MAKE) clean
+clean-octeon:
+	@cd octeon && $(MAKE) clean
 
 install: $(INSTALL_TARGETS) install-local install-doc install-local-include
 install-local: elementmap.xml click-buildtool click-compile config.mk \
@@ -244,7 +248,7 @@ distdir: $(srcdir)/configure
 
 
 .PHONY: all always elemlist elemlists \
-	bsdmodule linuxmodule ns userlevel tools \
+	bsdmodule linuxmodule ns userlevel octeon tools \
 	install install-doc install-lib install-man install-local install-include install-local-include $(INSTALL_TARGETS) \
 	clean clean-doc clean-local $(CLEAN_TARGETS) distclean \
 	uninstall uninstall-local uninstall-local-include \

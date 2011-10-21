@@ -7,6 +7,9 @@
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
 # include <math.h>
 #endif
+#ifdef OCTEON_MODEL
+# include <click-octeon/click-octeon.h>
+#endif
 CLICK_DECLS
 class String;
 class Timestamp;
@@ -854,6 +857,8 @@ Timestamp::assign_now(bool recent, bool steady, bool unwarped)
 	assert(0 && "nanosecond precision not available yet");
     }
 
+#elif TIMESTAMP_REP_FLAT64 && defined(OCTEON_MODEL)
+    _t.x = click_octeon_time();
 #elif HAVE_USE_CLOCK_GETTIME
     TIMESTAMP_DECLARE_TSP;
     if (steady)

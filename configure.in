@@ -999,6 +999,29 @@ if test $enable_intel_cpu = yes; then
     AC_DEFINE(HAVE_INTEL_CPU)
 fi
 
+dnl use Octeon-specific machine instructions
+
+AC_ARG_ENABLE(octeon, [  --enable-octeon      enable Octeon-specific machine instructions], :, enable_octeon=no)
+if test $enable_octeon != no; then
+    if test $enable_octeon = yes; then
+	OCTEON_TARGET="linux_64"
+	OCTEON_OBJDIR="\$(top_builddir)/octeon/obj-linux_64"
+    else
+	OCTEON_TARGET=""
+	OCTEON_OBJDIR="\$(top_builddir)/octeon/obj"
+    fi
+    LIBS="$LIBS -L $OCTEON_OBJDIR -lcvmx -lfdt"
+    OCTEON_INCLUDES="-I \$(top_builddir)/octeon/config -I\$(OCTEON_ROOT)/executive"
+    OCTEON_OBJ="$OCTEON_OBJDIR/click-octeon.o"
+    AC_SUBST(OCTEON_TARGET)
+    AC_SUBST(OCTEON_INCLUDES)
+    AC_SUBST(OCTEON_OBJ)
+    LDFLAGS="$LDFLAGS -mabi=64 -lrt -Xlinker -T -Xlinker \$(OCTEON_ROOT)/target/lib/cvmx-shared-linux.ld"
+    CPPFLAGS="$CPPFLAGS -DOCTEON_MODEL=\$(OCTEON_MODEL)"
+    CXXFLAGS="$CXXFLAGS -pthread"
+    element_groups="$element_groups octeon"
+fi
+AC_SUBST(OCTEON_INCLUDES)
 
 dnl
 dnl expand path variables
@@ -1057,7 +1080,7 @@ dnl possible drivers
 dnl
 
 POSSIBLE_DRIVERS=
-for i in bsdmodule linuxmodule ns userlevel; do
+for i in bsdmodule linuxmodule ns userlevel octeon; do
     test -f $srcdir/$i/Makefile.in && POSSIBLE_DRIVERS="$POSSIBLE_DRIVERS $i"
 done
 AC_SUBST(POSSIBLE_DRIVERS)
@@ -1639,6 +1662,12 @@ dnl check tools
 
 if test "x$enable_tools" != xno; then
     OTHER_TARGETS="$OTHER_TARGETS tools"
+fi
+
+dnl check octeon
+
+if test "x$enable_octeon" != xno; then
+    OTHER_TARGETS="$OTHER_TARGETS octeon"
 fi
 
 

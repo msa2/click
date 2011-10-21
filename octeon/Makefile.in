@@ -1,0 +1,65 @@
+######################*license start*###################################
+# OCTEON SDK
+# 
+# Copyright (c) 2003-2005 Cavium Networks. All rights reserved.
+# 
+# This file, which is part of the OCTEON SDK from Cavium Networks,
+# contains proprietary and confidential information of Cavium Networks and
+# its suppliers.
+# 
+# Any licensed reproduction, distribution, modification, or other use of
+# this file or the confidential information or patented inventions
+# embodied in this file is subject to your license agreement with Cavium
+# Networks. Unless you and Cavium Networks have agreed otherwise in
+# writing, the applicable license terms can be found at:
+# licenses/cavium-license-type2.txt
+# 
+# All other use and disclosure is prohibited.
+# 
+# Contact Cavium Networks at info@caviumnetworks.com for more information.
+#####################*license end*#####################################/
+
+
+#
+# File version info: $Id: Makefile 41255 2009-03-06 02:36:32Z anemet $
+
+
+ifndef OCTEON_ROOT
+OCTEON_ROOT = ../..
+endif
+
+MODEL=${OCTEON_MODEL}
+OCTEON_TARGET = @OCTEON_TARGET@
+
+all: appmain
+
+#  standard common Makefile fragment
+
+include $(OCTEON_ROOT)/common.mk
+
+#  include relevant component Makefile fragments
+
+dir := $(OCTEON_ROOT)/executive
+include $(dir)/cvmx.mk
+
+#  do normal application Makefile (without real target)
+TARGET = dummy
+include $(OCTEON_ROOT)/application.mk
+
+XTARGET = $(OBJ_DIR)/click-octeon.o
+
+$(XTARGET): click-octeon.c
+	$(CC) $(CFLAGS_GLOBAL) $(CFLAGS_LOCAL) -I ../include -MD -c -o $@ $<
+
+appmain:  $(CVMX_CONFIG) $(OBJ_DIR) $(XTARGET) $(LIBS_LIST)
+
+clean:
+	rm -f $(XTARGET) $(OBJ_DIR)/click-octeon.d
+	rm -f $(CLEAN_LIST) $(OBJS) $(DEPS)
+	rm -f $(CVMX_CONFIG)
+
+distclean: clean
+	rm -rf $(OBJ_DIR)
+	rm -f Makefile
+
+.PHONY:	all clean distclean appmain dummy

@@ -75,6 +75,14 @@ CLICK_USING_DECLS
 #define SIMTIME_OPT		317
 #define SOCKET_OPT		318
 
+#ifdef OCTEON_MODEL
+#define OCTEON_WPTR_OPT		319
+#define OCTEON_RED_OPT		320
+#define OCTEON_DYNRS_OPT	321
+
+#include "click-octeon/click-octeon.h"
+#endif
+
 static const Clp_Option options[] = {
     { "allow-reconfigure", 'R', ALLOW_RECONFIG_OPT, 0, Clp_Negate },
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ValString, 0 },
@@ -94,6 +102,11 @@ static const Clp_Option options[] = {
     { "version", 'v', VERSION_OPT, 0, 0 },
     { "warnings", 0, WARNINGS_OPT, 0, Clp_Negate },
     { "exit-handler", 'x', EXIT_HANDLER_OPT, Clp_ValString, 0 },
+#ifdef OCTEON_MODEL
+    { "octeon-wptr", 0, OCTEON_WPTR_OPT, 0, Clp_Negate },
+    { "octeon-red", 0, OCTEON_RED_OPT, 0, Clp_Negate },
+    { "octeon-dynrs", 0, OCTEON_DYNRS_OPT, 0, Clp_Negate },
+#endif
     { 0, 'w', NO_WARNINGS_OPT, 0, Clp_Negate },
 };
 
@@ -136,7 +149,15 @@ Options:\n\
   -C, --clickpath PATH          Use PATH for CLICKPATH.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
-\n\
+"
+#ifdef OCTEON_MODEL
+"\
+      --no-octeon-wptr          Allocate WQE before packet buffer.\n\
+      --no-octeon-red           Disable Random Early Drop.\n\
+      --no-octeon-dynrs         Disable short packet in WQE.\n\
+"
+#endif
+"\n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
@@ -437,6 +458,9 @@ static void *thread_driver(void *user_data)
 static int
 cleanup(Clp_Parser *clp, int exit_value)
 {
+#ifdef OCTEON_MODEL
+    click_octeon_exit();
+#endif
     Clp_DeleteParser(clp);
     click_static_cleanup();
     return exit_value;
@@ -461,6 +485,9 @@ main(int argc, char **argv)
   bool allow_reconfigure = false;
   Vector<String> handlers;
   String exit_handler;
+#ifdef OCTEON_MODEL
+  click_octeon_opt_t octeon_opt = click_octeon_opt_defaults();
+#endif
 
   while (1) {
     int opt = Clp_Next(clp);
@@ -571,7 +598,19 @@ main(int argc, char **argv)
 	break;
     }
 
-     case CLICKPATH_OPT:
+#ifdef OCTEON_MODEL
+    case OCTEON_WPTR_OPT:
+      octeon_opt.no_wptr = clp->negated;
+      break;
+    case OCTEON_RED_OPT:
+      octeon_opt.red = !clp->negated;
+      break;
+    case OCTEON_DYNRS_OPT:
+      octeon_opt.dyn_rs = !clp->negated;
+      break;
+#endif
+
+    case CLICKPATH_OPT:
       set_clickpath(clp->vstr);
       break;
 
@@ -610,6 +649,10 @@ particular purpose.\n");
   Router::add_read_handler(0, "timewarp", timewarp_read_handler, 0);
   if (Timestamp::warp_class() != Timestamp::warp_simulation)
       Router::add_write_handler(0, "timewarp", timewarp_write_handler, 0);
+
+#ifdef OCTEON_MODEL
+    click_octeon_init(octeon_opt);
+#endif
 
   // parse configuration
   router = parse_configuration(router_file, file_is_expr, false, errh);
@@ -662,6 +705,9 @@ particular purpose.\n");
     for (int t = 1; t < nthreads; ++t) {
 	pthread_t p;
 	pthread_create(&p, 0, thread_driver, router->master()->thread(t));
+#ifdef OCTEON_MODEL
+	click_octeon_thread(p, t);
+#endif
 	other_threads.push_back(p);
     }
 #endif

@@ -23,6 +23,7 @@ DEPCFLAGS = @DEPCFLAGS@
 AR_CREATE = @AR@ @AR_CREATEFLAGS@
 RANLIB = @RANLIB@
 INSTALL = @INSTALL@
+
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 ifeq ($(V),1)
@@ -73,8 +74,10 @@ GENERIC_OBJS = string.o straccum.o nameinfo.o \
 	$(EXTRA_DRIVER_OBJS)
 
 EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
+OCTEON_OBJ = @OCTEON_OBJ@
 
-LIBOBJS = $(GENERIC_OBJS) $(STD_ELEMENT_OBJS) clp.o exportstub.o
+LIBOBJS = $(GENERIC_OBJS) $(OCTEON_OBJ) $(STD_ELEMENT_OBJS) clp.o exportstub.o
+
 STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o \
 	errorelement.o portinfo.o scheduleinfo.o
 OBJS = $(ELEMENT_OBJS) $(ELEMENTSCONF).o click.o
@@ -86,7 +89,7 @@ CXXFLAGS = @CXXFLAGS@
 DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(srcdir) -I$(top_srcdir) \
-	@PROPER_INCLUDES@ @PCAP_INCLUDES@ @NETMAP_INCLUDES@
+	@PROPER_INCLUDES@ @PCAP_INCLUDES@ @NETMAP_INCLUDES@ @OCTEON_INCLUDES@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@ `$(top_builddir)/click-buildtool --otherlibs` $(ELEMENT_LIBS)
 DL_LDFLAGS = @DL_LDFLAGS@
@@ -125,6 +128,11 @@ endif
 
 $(DRIVER): Makefile libclick.a $(OBJS)
 	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) libclick.a $(LIBS),LINK)
+
+ifneq ($(OCTEON_OBJ),)
+$(OCTEON_OBJ): $(top_builddir)/octeon/click-octeon.c
+	cd $(top_builddir)/octeon && make
+endif
 
 libclick.a: Makefile $(LIBOBJS)
 	$(call verbose_cmd,$(AR_CREATE) libclick.a $(LIBOBJS),AR libclick.a)

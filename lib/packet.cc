@@ -26,6 +26,9 @@
 #if CLICK_USERLEVEL
 # include <unistd.h>
 #endif
+#ifdef OCTEON_MODEL
+# include <click-octeon/click-octeon.h>
+#endif
 CLICK_DECLS
 
 /** @file packet.hh
@@ -331,6 +334,10 @@ WritablePacket::pool_allocate(uint32_t headroom, uint32_t length,
 	    packet_pool.pd = pd->next;
 	    --packet_pool.pdcount;
 	    p->_head = reinterpret_cast<unsigned char *>(pd);
+#ifdef OCTEON_MODEL
+	} else if ((p->_head = click_octeon_alloc(n, &p->_destructor))) {
+	    /* OK */
+#endif
 	} else if ((p->_head = new unsigned char[n]))
 	    /* OK */;
 	else {
@@ -432,7 +439,13 @@ Packet::alloc_data(uint32_t headroom, uint32_t length, uint32_t tailroom)
 	n = min_buffer_length;
     }
 #if CLICK_USERLEVEL
+#ifdef OCTEON_MODEL
+    unsigned char *d = click_octeon_alloc(n, &_destructor);
+    if (!d)
+	d = new unsigned char[n];
+#else
     unsigned char *d = new unsigned char[n];
+#endif
     if (!d)
 	return false;
     _head = d;
@@ -712,6 +725,9 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
     }
 
     uint8_t *old_head = _head, *old_end = _end;
+# ifdef OCTEON_MODEL
+    buffer_destructor_type old_destructor = _destructor;
+# endif    
 # if CLICK_BSDMODULE
     struct mbuf *old_m = _m;
 # endif
@@ -729,7 +745,12 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
     // free old data
     if (_data_packet)
 	_data_packet->kill();
-# if CLICK_USERLEVEL
+# ifdef OCTEON_MODEL
+    else if (old_destructor)
+	old_destructor(old_head, old_end - old_head);
+    else
+	delete[] old_head;
+# elif CLICK_USERLEVEL
     else if (_destructor)
 	_destructor(old_head, old_end - old_head);
     else
@@ -746,7 +767,6 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
 
 #endif /* CLICK_LINUXMODULE */
 }
-
 
 
 #ifdef CLICK_BSDMODULE		/* BSD kernel module */

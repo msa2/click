@@ -1,0 +1,39 @@
+1) Generate configuration
+
+   autoconf -f
+   ./configure --enable-userlevel --disable-linuxmodule --host=mips64-octeon-linux-gnu --build=i686-linux --enable-tools=mixed --enable-octeon --enable-user-multithread
+
+2) Build Linux usermode click with octeon
+
+  Assumed: OCTEON_MODEL and OCTEON_ROOT environs are set!
+
+    cd userlevel
+    make
+
+3) Transfer files to octeon
+
+  The click executable and ping echo responder click script.  In
+  script octeon/echo-align.click, edit the IP/MAC address in
+  addressinfo() to match your device (to /root/)
+
+  click
+  octeon/echo-align.click
+
+4) Boot the octeon, login as root
+
+  Start app on octeon
+
+    ./click echo-align.click
+
+  On linux
+
+    ping octeon
+
+5) Additional octeon configuration options
+
+  The patch adds the following usermode click octeon specific command
+  line options:
+
+      --no-octeon-wptr          Allocate WQE before packet buffer.
+      --no-octeon-red           Disable Random Early Drop.
+      --no-octeon-dynrs         Disable short packet in WQE.
