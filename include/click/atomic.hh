@@ -26,6 +26,15 @@ CLICK_CXX_UNPROTECT
 # else
 #  define CLICK_ATOMIC_LOCK	/* nothing */
 # endif
+#elif defined OCTEON_MODEL
+# if HAVE_MULTITHREAD
+#  include "cvmx.h"
+#  include "cvmx-atomic.h"
+#  define CLICK_ATOMIC_OCTEON 1
+#  define CLICK_ATOMIC_LOCK	"lock ; "
+# else
+#  define CLICK_ATOMIC_LOCK	/* nothing */
+# endif
 #endif
 
 /** @file <click/atomic.hh>
@@ -99,6 +108,8 @@ atomic_uint32_t::value() const
 {
 #if CLICK_LINUXMODULE
     return atomic_read(&_val);
+#elif CLICK_ATOMIC_OCTEON
+	return cvmx_atomic_get32((int32_t*)&_val);
 #else
     return CLICK_ATOMIC_VAL;
 #endif
@@ -117,6 +128,8 @@ atomic_uint32_t::operator=(uint32_t x)
 {
 #if CLICK_LINUXMODULE
     atomic_set(&_val, x);
+#elif defined CLICK_ATOMIC_OCTEON
+	cvmx_atomic_set32((int32_t*)&_val, x);
 #else
     CLICK_ATOMIC_VAL = x;
 #endif
@@ -134,6 +147,8 @@ atomic_uint32_t::operator+=(int32_t delta)
 		  : "=m" (CLICK_ATOMIC_VAL)
 		  : "r" (delta), "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
+#elif CLICK_ATOMIC_OCTEON
+	cvmx_atomic_add32((int32_t*)&_val, delta);
 #else
     CLICK_ATOMIC_VAL += delta;
 #endif
@@ -151,6 +166,8 @@ atomic_uint32_t::operator-=(int32_t delta)
 		  : "=m" (CLICK_ATOMIC_VAL)
 		  : "r" (delta), "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
+#elif CLICK_ATOMIC_OCTEON
+	cvmx_atomic_add32((int32_t*)&_val, -delta);
 #else
     CLICK_ATOMIC_VAL -= delta;
 #endif
@@ -174,6 +191,10 @@ atomic_uint32_t::operator|=(uint32_t mask)
     local_irq_save(flags);
     CLICK_ATOMIC_VAL |= mask;
     local_irq_restore(flags);
+#elif CLICK_ATOMIC_OCTEON
+	CVMX_SYNCWS;
+	cvmx_atomic_fetch_and_bset32_nosync((uint32_t*)&_val, mask);
+	CVMX_SYNCWS;
 #else
     CLICK_ATOMIC_VAL |= mask;
 #endif
@@ -197,6 +218,10 @@ atomic_uint32_t::operator&=(uint32_t mask)
     local_irq_save(flags);
     CLICK_ATOMIC_VAL &= mask;
     local_irq_restore(flags);
+#elif CLICK_ATOMIC_OCTEON
+	CVMX_SYNCWS;
+	cvmx_atomic_fetch_and_bclr32_nosync((uint32_t*)&_val, ~mask);
+	CVMX_SYNCWS;
 #else
     CLICK_ATOMIC_VAL &= mask;
 #endif
@@ -215,6 +240,8 @@ atomic_uint32_t::inc(volatile uint32_t &x)
 		  : "=m" (x)
 		  : "m" (x)
 		  : "cc");
+#elif CLICK_ATOMIC_OCTEON
+	cvmx_atomic_add32((int32_t*)&x, 1);
 #else
     x++;
 #endif
@@ -231,6 +258,8 @@ atomic_uint32_t::operator++()
 		  : "=m" (CLICK_ATOMIC_VAL)
 		  : "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
+#elif CLICK_ATOMIC_OCTEON
+	cvmx_atomic_add32((int32_t*)&_val, 1);
 #else
     CLICK_ATOMIC_VAL++;
 #endif
@@ -247,6 +276,8 @@ atomic_uint32_t::operator++(int)
 		  : "=m" (CLICK_ATOMIC_VAL)
 		  : "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
+#elif CLICK_ATOMIC_OCTEON
+	cvmx_atomic_add32((int32_t*)&_val, 1);
 #else
     CLICK_ATOMIC_VAL++;
 #endif
@@ -263,6 +294,8 @@ atomic_uint32_t::operator--()
 		  : "=m" (CLICK_ATOMIC_VAL)
 		  : "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
+#elif CLICK_ATOMIC_OCTEON
+	cvmx_atomic_add32((int32_t*)&_val, -1);
 #else
     CLICK_ATOMIC_VAL--;
 #endif
@@ -279,6 +312,8 @@ atomic_uint32_t::operator--(int)
 		  : "=m" (CLICK_ATOMIC_VAL)
 		  : "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
+#elif CLICK_ATOMIC_OCTEON
+	cvmx_atomic_add32((int32_t*)&_val, -1);
 #else
     CLICK_ATOMIC_VAL--;
 #endif
@@ -307,6 +342,12 @@ atomic_uint32_t::swap(volatile uint32_t &x, uint32_t desired)
     return xchg(&x, desired);
 #elif CLICK_LINUXMODULE
 # error "need xchg for atomic_uint32_t::swap"
+#elif CLICK_ATOMIC_OCTEON
+	uint32_t ret;
+	CVMX_SYNCWS;
+	ret = cvmx_atomic_swap32_nosync((uint32_t*)&x, desired);
+	CVMX_SYNCWS;
+	return ret;
 #else
     uint32_t actual = x;
     x = desired;
@@ -331,6 +372,12 @@ atomic_uint32_t::swap(uint32_t desired)
     return atomic_xchg(&_val, desired);
 #elif CLICK_LINUXMODULE
 # error "need xchg for atomic_uint32_t::swap"
+#elif CLICK_ATOMIC_OCTEON
+	uint32_t ret;
+	CVMX_SYNCWS;
+	return cvmx_atomic_swap32_nosync((uint32_t*)&_val, desired);
+	CVMX_SYNCWS;
+	return ret;
 #else
     return swap(CLICK_ATOMIC_VAL, desired);
 #endif
@@ -363,6 +410,8 @@ atomic_uint32_t::fetch_and_add(uint32_t delta)
     CLICK_ATOMIC_VAL += delta;
     local_irq_restore(flags);
     return old_value;
+#elif CLICK_ATOMIC_OCTEON
+	return cvmx_atomic_fetch_and_add32((int32_t*)&_val, delta);
 #else
     uint32_t old_value = value();
     CLICK_ATOMIC_VAL += delta;
@@ -391,6 +440,8 @@ atomic_uint32_t::dec_and_test(volatile uint32_t &x)
 		  : "m" (x)
 		  : "cc");
     return result;
+#elif CLICK_ATOMIC_OCTEON
+	return cvmx_atomic_fetch_and_add32((int32_t *)&x, -1) == 1;
 #else
     return (--x == 0);
 #endif
@@ -432,6 +483,10 @@ atomic_uint32_t::compare_swap(volatile uint32_t &x, uint32_t expected, uint32_t 
 	x = desired;
     local_irq_restore(flags);
     return actual;
+#elif CLICK_ATOMIC_OCTEON
+	uint32_t ret = cvmx_atomic_get32((int32_t*)&x);
+	cvmx_atomic_compare_and_store32((uint32_t*)&x, expected, desired);
+	return ret;
 #else
     uint32_t actual = x;
     if (actual == expected)
@@ -478,6 +533,8 @@ atomic_uint32_t::compare_and_swap(volatile uint32_t &x, uint32_t expected, uint3
 	x = desired;
     local_irq_restore(flags);
     return old_value == expected;
+#elif CLICK_ATOMIC_OCTEON
+	return cvmx_atomic_compare_and_store32((uint32_t*)&x, expected, desired);
 #else
     uint32_t old_value = x;
     if (old_value == expected)
@@ -506,6 +563,8 @@ atomic_uint32_t::dec_and_test()
 		  : "m" (CLICK_ATOMIC_VAL)
 		  : "cc");
     return result;
+#elif CLICK_ATOMIC_OCTEON
+	return cvmx_atomic_fetch_and_add32((int32_t*)&_val, -1) == 1;
 #else
     return (--CLICK_ATOMIC_VAL == 0);
 #endif
@@ -546,6 +605,10 @@ atomic_uint32_t::compare_swap(uint32_t expected, uint32_t desired)
 	CLICK_ATOMIC_VAL = desired;
     local_irq_restore(flags);
     return actual;
+#elif CLICK_ATOMIC_OCTEON
+	uint32_t ret = cvmx_atomic_get32((int32_t*)&_val);
+	cvmx_atomic_compare_and_store32((uint32_t*)&_val, expected, desired);
+	return ret;
 #else
     uint32_t actual = value();
     if (actual == expected)
@@ -590,6 +653,8 @@ atomic_uint32_t::compare_and_swap(uint32_t expected, uint32_t desired)
 	CLICK_ATOMIC_VAL = desired;
     local_irq_restore(flags);
     return old_value == expected;
+#elif CLICK_ATOMIC_OCTEON
+	return cvmx_atomic_compare_and_store32((uint32_t*)&_val, expected, desired);
 #else
     uint32_t old_value = value();
     if (old_value == expected)
@@ -650,3 +715,4 @@ typedef atomic_uint32_t uatomic32_t;
 
 CLICK_ENDDECLS
 #endif
+
