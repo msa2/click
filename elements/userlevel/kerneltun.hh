@@ -156,6 +156,16 @@ class KernelTun : public Element { public:
     click_uint_large_t _selected_calls;
     click_uint_large_t _packets;
 
+#ifdef OCTEON_MODEL
+    /*
+     * Ugly hack to work around a bug in Cavium Linux kernel: it looks like it cannot handle
+     * copy_to/from_user when the user space address is from XKPHYS segment.
+     */
+    unsigned char *_rtmp; /* Should point to memory buffer of _mtu_in bytes */
+    unsigned char *_wtmp; /* Points to a memory buffer of _wlen bytes */
+    size_t _wlen;
+#endif
+
 #if HAVE_LINUX_IF_TUN_H
     int try_linux_universal();
 #endif

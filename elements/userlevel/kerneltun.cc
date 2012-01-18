@@ -71,11 +71,18 @@ KernelTun::KernelTun()
     : _fd(-1), _tap(false), _task(this), _ignore_q_errs(false),
       _printed_write_err(false), _printed_read_err(false),
       _selected_calls(0), _packets(0)
+#ifdef OCTEON_MODEL
+    , _rtmp(0), _wtmp(0), _wlen(0)
+#endif
 {
 }
 
 KernelTun::~KernelTun()
 {
+#ifdef OCTEON_MODEL
+    delete[] _rtmp;
+    delete[] _wtmp;
+#endif
 }
 
 void *
@@ -454,7 +461,11 @@ KernelTun::setup_tun(ErrorHandler *errh)
 	_mtu_in = _mtu_out + 4; // + 0?
     else /* _type == LINUX_ETHERTAP */
 	_mtu_in = _mtu_out + 16;
-
+#ifdef OCTEON_MODEL
+    /* HACK: (Re)Allocate a read buffer */
+    delete[] _rtmp;
+    _rtmp = new unsigned char[_mtu_in];
+#endif
     return 0;
 }
 
@@ -510,8 +521,13 @@ KernelTun::one_selected(const Timestamp &now)
 	click_chatter("out of memory!");
 	return false;
     }
-
+#ifdef OCTEON_MODEL
+    int cc = read(_fd, _rtmp, _mtu_in);
+    if (cc > 0)
+	memcpy(p->data(), _rtmp, cc);
+#else
     int cc = read(_fd, p->data(), _mtu_in);
+#endif
     if (cc > 0) {
 	++_packets;
 	p->take(_mtu_in - cc);
@@ -663,7 +679,17 @@ KernelTun::push(int, Packet *p)
     }
 
     if (p) {
+#ifdef OCTEON_MODEL
+	if (p->length() > _wlen) {
+	    delete[] _wtmp;
+	    _wlen = p->length();
+	    _wtmp = new unsigned char[_wlen];
+	}
+	memcpy(_wtmp, p->data(), p->length());
+	int w = write(_fd, _wtmp, p->length());
+#else
 	int w = write(_fd, p->data(), p->length());
+#endif
 	if (w != (int) p->length() && (errno != ENOBUFS || !_ignore_q_errs || !_printed_write_err)) {
 	    _printed_write_err = true;
 	    click_chatter("%s(%s): write failed: %s", class_name(), _dev_name.c_str(), strerror(errno));
