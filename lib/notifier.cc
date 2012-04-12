@@ -119,9 +119,9 @@ NotifierSignal::operator+=(const NotifierSignal &x)
 {
     // preserve busy_signal(); adding other incompatible signals
     // leads to overderived_signal()
-    if (idle() || (x.busy() && *this != busy_signal()))
+    if (idle() || (x.busy() && *this != busy_signal()) || !x.initialized())
 	*this = x;
-    else if (busy() || x.idle() || _v.v == x._v.v)
+    else if (busy() || !initialized() || x.idle() || _v.v == x._v.v)
 	/* do nothing */;
     else if (*x._v.v != 2)
 	hard_derive_one(x._v.v);
