@@ -38,11 +38,12 @@ host
 hostinbound :: IPsecInbound(hostipsec);
 echoipsec   :: IPsec(s1 e1, s0 a0);
 
-echoinbound :: IPsecInbound(echoipsec)
- -> echo :: CheckIPHeader
+echo :: CheckIPHeader
  -> ICMPPingResponder
  -> echoipsec;
 
+echoinbound :: IPsecInbound(echoipsec)
+  -> [1] echoipsec;
 echoinbound[1]
   -> [2]t1[2]
   -> StripIPHeader()
