@@ -386,7 +386,10 @@ void IPsec::push(int port, Packet *p)
     do {
 	h += hlen;
 
-	// verify h does not point beyond packet data
+	// Check that h is within packet data (only h[0..3] needed in
+	// below, thus -4)
+	if (h < p->data() || h >= p->end_data() - 4)
+	    break;
 
 	switch (proto) {
 	case 0: // Hop-by-Hop option

@@ -81,7 +81,13 @@ void IPsecInbound::push(int, Packet *p)
     do {
 	h += hlen;
 
-	// !!! verify h does not point beyond packet data
+	// Check that h is within packet data (at most h[0..7] needed
+	// in below, thus -8)
+	if (h < p->data() || h >= p->end_data() - 8) {
+	    // Not IPsec, forward to port 0
+	    checked_output_push(0, p);
+	    return;
+	}
 
 	switch (proto) {
 	case 0: // Hop-by-Hop option
