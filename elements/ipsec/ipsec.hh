@@ -29,18 +29,37 @@ CLICK_DECLS
  * outbound IPsec processing, and packets to port 1 get inbound
  * policy check.
  *
- * The first 3 output ports are fixed:
+ * The first 4 output ports are fixed:
  *
- * All packets from input port 0 judged as BYPASS come out from
- * port 0.
+ * Port 0 - all outbound packets from input port 0 judged as BYPASS by
+ * the policy.
  *
- * All packets from input port 1, which pass the policy check come out
- * from port 1.
+ * Port 1 - all inbound packets from input port 1, which pass the
+ * policy check.
  *
- * All packets judged as DISCARD (inbound or outbound), come out from port 2.
+ * Port 2 - all packets judged as DISCARD by the policy (inbound or
+ * outbound)
+ *
+ * Port 3 - all outbound packets that require IPsec processing, but
+ * for which the keys are not yet available (acquire in progress).
  *
  * The remaining ports must be attached to the IPsec transfrom elements which
  * handle the outgoing IPsec transforms.
+ *
+ * =e
+ *
+ * When creating IPsec configurations, the following generic model
+ * could be used (inside and outside defined by the users
+ * requirements):
+ *
+ *   ipsec :: IPsec(...);
+ *   ipsecinbound :: IPsecInbound(ipsec);
+ *
+ *   // outgoing IP packets from
+ *   from_inside -> [0] ipsec -> encap transforms -> to_outside
+ *
+ *   // incoming IP packets from
+ *   from_outside -> [0] ipsecinbound -> decap transforms -> [1] ipsec [1] -> to_inside
  *
  * =a IPsecInbound
  */

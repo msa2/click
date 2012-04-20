@@ -18,7 +18,7 @@ CLICK_DECLS
  * preconfigured manual keys by responding to the IPsec ACQUIRE
  * requests, if the request matches any of the provided keys.
  *
- * IPSEC is mandatory and must be the IPsec element, which is
+ * IPSEC is mandatory and must be the IPsec element, which
  * this key manager serves.
  *
  * TRIGGER is an optional IPsecSelector element. If specified, each
