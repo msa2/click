@@ -1,0 +1,36 @@
+Introduce new elements for building a proper RFC-4301 and
+Key Management support. This is still work in progress and
+at the goal has been in building a framework that can be
+completed without breaking the interfaces between elements.
+
+Depends on IP6Address, so this must be configured with --enable-ip6.
+Only for usermode, does not compile in kernel module due to use
+of dynamic_cast (can probably be avoided with some addon work).
+
+This introduces four new main elements:
+
+ IPsec - provide the RFC-4301 implementation
+
+ IPsecInbound - inbound IPsec frontend. Peeks into IP packet and
+                routes to selected output port depending on the IPsec
+                requirements.
+
+ IPsecKM - IPsec Key manager stub, which can be used as a base for
+  	   writing adapters to real IKE or other experimental key
+  	   exchange implementations.
+
+ IPsecTransform - holds IPsec transform proposal information (and
+ 		  works as a first element in the element pipe line,
+ 		  which implements the transform it described).
+
+ IPsecAdapter - is derived from IPsecTransform and adapts this new
+                framework for the old IPsec encryption and
+                authentication elements (converts new SA into
+                SADataTuple)
+
+And following supporting information type elements:
+
+ IPsecSelector - IPsec selector
+ IPsecPolicyAction - Policy parameters for IPsec processing
+ IPsecSAData - Manual/fixed SA data (spi, key, algorithms) for IPsec
+
