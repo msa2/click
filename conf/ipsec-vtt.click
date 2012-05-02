@@ -24,13 +24,6 @@ AddressInfo(
 
 	// Address of the remote security gateway
 	SGW 192.168.0.15,
-	// Fake source address for outer tunnel (it should be the
-	// real source, but Linux refuses to route packets from
-	// tun device if the source is being used by another
-	// device (eth1) -- this is only for testing purposes and
-	// can picked freely as long as it is not used on any real
-	// interface and passes through your outbound gateways.
-	FAKEME 192.168.1.14,
 	// My real source address on eth1. Only required because
 	// the inbound now has to deal with ARP.
 	REALME 192.168.0.14 00:13:3b:02:b3:96)
@@ -133,8 +126,8 @@ ipsec[4]
     -> IPsecAuthHMACSHA1(0)
     -> IPsecAES(1)
     -> IPsecEncap(esp)
-    -> FixIPSrc(FAKEME)
-    -> host;
+    -> FixIPSrc(REALME)
+    -> eth;
 
 // IPsecInbound - the IPsec frontend for inbound IPv4/IPv6 packets.
 //
