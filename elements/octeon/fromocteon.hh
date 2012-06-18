@@ -87,7 +87,7 @@ public:
 inline const Element::Port&
 FromOcteon::map_port(unsigned ipd_port) const
 {
-    return *_port_map[ipd_port < _port_map_size ? ipd_port : _port_map_size];
+    return *_port_map[ipd_port < _port_map_size ? ipd_port : _port_map_size-1];
 }
 
 CLICK_ENDDECLS

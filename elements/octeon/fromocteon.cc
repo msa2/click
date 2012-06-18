@@ -83,8 +83,8 @@ FromOcteon::configure(Vector<String> &conf, ErrorHandler *errh)
 
 	if (Args(this, errh).bind(conf).read_mp("IPD_PORT", port).consume() < 0)
 	    return -1;
-	if (port >= _port_map_size)
-	    _port_map_size = port+1;
+	if (port+1 >= _port_map_size)
+	    _port_map_size = port+2;
 	_ipd_port_list[k++] = port;
     }
     return 0;
@@ -112,7 +112,7 @@ FromOcteon::initialize(ErrorHandler *errh)
 	_port_map[_ipd_port_list[k]] = &output(k);
 	click_chatter("%s Mapped IPD Port %d to output [%d]", declaration().c_str(), _ipd_port_list[k], k);
     }
-    click_chatter("%s Unmapped IPD Ports go to output [%d]", declaration().c_str(), ports);
+    click_chatter("%s Unmapped IPD Ports go to output [%d]", declaration().c_str(), ports-1);
     // Initialize task to scheduler
     ScheduleInfo::initialize_task(this, &_task, errh);
     return 0;
