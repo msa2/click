@@ -111,5 +111,6 @@ IPsecOcteonAuthHMACSHA1::add_handlers()
 #include "elements/octeon/hmac.cc"
 
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(ipsec)
 EXPORT_ELEMENT(IPsecOcteonAuthHMACSHA1)
 ELEMENT_MT_SAFE(IPsecOcteonAuthHMACSHA1)

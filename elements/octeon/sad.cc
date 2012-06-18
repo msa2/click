@@ -27,4 +27,5 @@ SADAnnotate::simple_action(Packet *p)
 }
 
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(ipsec)
 EXPORT_ELEMENT(SADAnnotate)
