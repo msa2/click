@@ -31,9 +31,17 @@ class AdapterContext : public IPsec::TransformContext
 public:
     ~AdapterContext() {};
     AdapterContext(const void *encr , const void *auth, uint32_t counter, uint8_t o_oowin);
+    void *cast(const char *name);
 public:
     SADataTuple context;
 };
+
+void *AdapterContext::cast(const char *name)
+{
+    if (strcmp(name, "AdapterContext") == 0)
+	return (AdapterContext *)this;
+    return NULL;
+}
 
 AdapterContext::AdapterContext(const void *encr , const void *auth, uint32_t counter, uint8_t o_oowin)
     : context(SADataTuple(encr, auth, counter, o_oowin))
@@ -61,11 +69,11 @@ IPsec::TransformContext *IPsecAdapter::setup(const IPsec::KeyInfo &info, const I
 Packet *IPsecAdapter::simple_action(Packet *p)
 {
     IPsec::Association *sa = (IPsec::Association *)IPSEC_SA_DATA_REFERENCE_ANNO(p);
-    if (!sa) {
+    if (!sa || !sa->context) {
 	p->kill();
 	return NULL;
     }
-    AdapterContext *data = dynamic_cast<AdapterContext *>(sa->context);
+    AdapterContext *data = (AdapterContext *)sa->context->cast("AdapterContext");
     if (!data) {
 	p->kill();
 	return NULL;

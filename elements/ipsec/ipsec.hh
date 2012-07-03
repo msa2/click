@@ -267,6 +267,7 @@ public:
     class TransformContext {
     public:
 	virtual ~TransformContext() {}
+	virtual void *cast(const char *) { return NULL; }
     };
 
     class Association {

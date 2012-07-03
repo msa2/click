@@ -110,7 +110,7 @@ bool IPsec::Association::init_pipe(const Element *e, const KeyInfo &key)
     // Locate the pipe lines (click port numbers) matching the algorithm
     int port = e->noutputs();
     while (--port >= 0) {
-	IPsecTransform *tr = dynamic_cast<IPsecTransform *>(e->output(port).element());
+	IPsecTransform *tr = (IPsecTransform *)e->output(port).element()->cast("IPsecTransform");
 	if (!tr)
 	    continue;
 	context = tr->setup(key, *this);
