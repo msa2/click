@@ -108,7 +108,8 @@ FromOcteon::initialize(ErrorHandler *errh)
     for (unsigned int k = 0; k < _port_map_size; ++k)
 	_port_map[k] = &output(ports-1);
     // ... map configured ones to click ports
-    for (int k = 0; k < ports; ++k) {
+    const int maxk = ports < (int)_ipd_port_list_size ? ports : _ipd_port_list_size;
+    for (int k = 0; k < maxk; ++k) {
 	_port_map[_ipd_port_list[k]] = &output(k);
 	click_chatter("%s Mapped IPD Port %d to output [%d]", declaration().c_str(), _ipd_port_list[k], k);
     }
