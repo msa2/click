@@ -228,6 +228,7 @@ static int application_init_simple_exec(const click_octeon_opt_t opt)
                 pknd = cvmx_helper_get_pknd(interface, port);
             else
                 pknd = cvmx_helper_get_ipd_port(interface, port);
+	    cvmx_dprintf("Interface %d port %d is IPD Port %d\n", interface, port, pknd);
             port_cfg.u64 = cvmx_read_csr(CVMX_PIP_PRT_CFGX(pknd));
             port_cfg.s.dyn_rs = opt.dyn_rs;
             cvmx_write_csr(CVMX_PIP_PRT_CFGX(pknd), port_cfg.u64);
